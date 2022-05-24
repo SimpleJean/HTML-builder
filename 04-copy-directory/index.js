@@ -30,5 +30,3 @@ const copyDir = () => {
   });
 };
 copyDir();
-//need to add if folder exists then do not create it again
-//if some files is changed then it will update the file
