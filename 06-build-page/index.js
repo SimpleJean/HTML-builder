@@ -5,7 +5,6 @@ const path = require('path');
 const createProjectDist = path.join(__dirname, 'project-dist');
 const templateHtml = path.join(__dirname, 'template.html');
 const createNewHtml = path.join(createProjectDist, 'index.html');
-const componentsPath = path.join(__dirname, 'components');
 
 //create a directory named project-dist
 const makeDir = () => {
@@ -13,28 +12,39 @@ const makeDir = () => {
 };
 makeDir();
 
-//create a file named index.html
-const createHtml = async () => {
-  const newFooter = await fsPromises.readFile(
-    path.join(componentsPath, 'footer.html'),
-    'utf-8'
-  );
-  const newHeader = await fsPromises.readFile(
-    path.join(componentsPath, 'header.html'),
-    'utf-8'
-  );
-  const newArticles = await fsPromises.readFile(
-    path.join(componentsPath, 'articles.html'),
-    'utf-8'
-  );
-  const template = await fsPromises.readFile(templateHtml, 'utf8');
-  const newTemplate = template
-    .replace(/{{header}}/g, newHeader)
-    .replace(/{{articles}}/g, newArticles)
-    .replace(/{{footer}}/g, newFooter);
-  await fsPromises.writeFile(createNewHtml, newTemplate);
-};
-createHtml();
+//create a index.html file in project-dist
+async function readComponents() {
+  const componentsPath = path.join(__dirname, 'components');
+
+  let readTemplate = await fsPromises.readFile(templateHtml, 'utf-8');
+  fs.readdir(componentsPath, { withFileTypes: true }, (err, files) => {
+    if (err) {
+      console.log(err);
+    }
+    files.map((file) => {
+      let componentStream = fs.createReadStream(
+        path.join(__dirname, 'components', file.name),
+        {
+          encoding: 'utf-8',
+        }
+      );
+      componentStream.on('data', (chunk) => {
+        readTemplate = readTemplate.replace(
+          `{{${file.name.split('.')[0]}}}`,
+          chunk
+        );
+        fs.writeFile(path.join(createNewHtml), readTemplate, (err) => {
+          if (err) {
+            console.log(err);
+          } else {
+            console.log('index.html created');
+          }
+        });
+      });
+    });
+  });
+}
+readComponents();
 
 //merge and copy styles.css
 const pathToDir = path.join(__dirname, 'styles');
